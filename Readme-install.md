@@ -10,7 +10,7 @@
 本项目主要依赖以下工具：
 
 - Go `1.23.x`
-- Node.js `20.16.0`
+- Node.js `23.7.0`
 - npm
 - FFmpeg
 - Docker
@@ -18,7 +18,7 @@
 说明：
 
 - 前端统一使用 `nvm` 管理 Node 版本。
-- 你当前机器上推荐使用的 Go 路径为：
+- 当前推荐的 Go 路径：
   [`D:\Program Files\Go1.23.1`](d:/Program%20Files/Go1.23.1)
 - 后续新增工具、缓存和构建产物，优先放在 `D:` 盘。
 
@@ -43,14 +43,14 @@ nvm version
 本项目统一使用：
 
 ```text
-20.16.0
+23.7.0
 ```
 
 安装并切换版本：
 
 ```powershell
-nvm install 20.16.0
-nvm use 20.16.0
+nvm install 23.7.0
+nvm use 23.7.0
 node -v
 npm -v
 ```
@@ -120,7 +120,7 @@ cd huobao-drama
 ### 5.3 安装前端依赖
 
 ```powershell
-nvm use 20.16.0
+nvm use 23.7.0
 cd web
 npm install
 cd ..
@@ -177,8 +177,16 @@ storage:
 
 终端 1：启动 Go 后端
 
+推荐方式：
+
 ```powershell
-& 'D:\Program Files\Go1.23.1\bin\go.exe' run .\main.go
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-backend-dev.ps1
+```
+
+或：
+
+```powershell
+.\scripts\run-backend-dev.cmd
 ```
 
 终端 2：启动前端
@@ -200,13 +208,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-frontend-dev.p
 前端构建：
 
 ```powershell
-& 'D:\Users\cao_l\AppData\Local\nvm\v20.16.0\node.exe' .\web\node_modules\vite\bin\vite.js build
+& 'D:\Users\cao_l\AppData\Local\nvm\v23.7.0\node.exe' .\web\node_modules\vite\bin\vite.js build
 ```
 
 后端启动：
 
 ```powershell
-& 'D:\Program Files\Go1.23.1\bin\go.exe' run .\main.go
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-backend-dev.ps1
 ```
 
 ## 8. 编译 Go 后端
@@ -218,16 +226,22 @@ New-Item -ItemType Directory -Force -Path .\.gocache | Out-Null
 $env:GOROOT='D:\Program Files\Go1.23.1'
 $env:PATH='D:\Program Files\Go1.23.1\bin;' + $env:PATH
 $env:GOTOOLCHAIN='local'
+$env:GOTELEMETRY='off'
 $env:GOCACHE=(Join-Path (Get-Location) '.gocache')
 & 'D:\Program Files\Go1.23.1\bin\go.exe' build ./...
 ```
+
+说明：
+
+- 当前后端已切换为纯 Go SQLite 驱动
+- 本地运行不再依赖 `gcc/cgo`
 
 ## 9. 编译 Node 前端
 
 当前机器上，推荐直接使用 `node + vite` 的方式构建前端：
 
 ```powershell
-& 'D:\Users\cao_l\AppData\Local\nvm\v20.16.0\node.exe' .\web\node_modules\vite\bin\vite.js build
+& 'D:\Users\cao_l\AppData\Local\nvm\v23.7.0\node.exe' .\web\node_modules\vite\bin\vite.js build
 ```
 
 产物目录：
@@ -292,6 +306,7 @@ Get-Content Readme-install.md
 当前脚本如下：
 
 - [`/scripts/run-backend-dev.ps1`](d:/GitHub/huobao-drama/scripts/run-backend-dev.ps1)
+- [`/scripts/run-backend-dev.cmd`](d:/GitHub/huobao-drama/scripts/run-backend-dev.cmd)
 - [`/scripts/run-frontend-dev.ps1`](d:/GitHub/huobao-drama/scripts/run-frontend-dev.ps1)
 
 ## 14. 当前机器上前端的推荐启动方式
@@ -306,7 +321,7 @@ Get-Content Readme-install.md
 方式二：直接运行 Vite CLI
 
 ```powershell
-& 'D:\Users\cao_l\AppData\Local\nvm\v20.16.0\node.exe' .\web\node_modules\vite\bin\vite.js
+& 'D:\Users\cao_l\AppData\Local\nvm\v23.7.0\node.exe' .\web\node_modules\vite\bin\vite.js
 ```
 
 项目中也已将 npm 缓存目录收敛到 D 盘仓库目录：
@@ -419,6 +434,7 @@ CentOS 停止：
 开发运行：
 
 - [`/scripts/run-backend-dev.ps1`](d:/GitHub/huobao-drama/scripts/run-backend-dev.ps1)
+- [`/scripts/run-backend-dev.cmd`](d:/GitHub/huobao-drama/scripts/run-backend-dev.cmd)
 - [`/scripts/run-frontend-dev.ps1`](d:/GitHub/huobao-drama/scripts/run-frontend-dev.ps1)
 
 Linux 后端编译：
