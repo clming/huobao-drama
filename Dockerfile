@@ -1,97 +1,70 @@
-# 多阶段构建 Dockerfile for Huobao Drama
+# syntax=docker/dockerfile:1.7
 
-# ==================== 阶段1: 构建前端 ====================
-FROM node:20-alpine AS frontend-builder
-
-# 配置 npm 镜像源（国内加速）
-RUN npm config set registry https://registry.npmmirror.com
+FROM node:20-bookworm-slim AS frontend-builder
 
 WORKDIR /app/web
 
-# 复制前端依赖文件
 COPY web/package*.json ./
-
-# 安装前端依赖（包括 devDependencies，构建需要）
 RUN npm install
 
-# 复制前端源码
 COPY web/ ./
-
-# 构建前端
 RUN npm run build
 
-# ==================== 阶段2: 构建后端 ====================
-FROM golang:1.23-alpine AS backend-builder
 
-# 配置 Go 代理（国内镜像加速）
-ENV GOPROXY=https://goproxy.cn,direct \
+FROM golang:1.23-bookworm AS backend-builder
+
+ENV GOPROXY=https://proxy.golang.org,direct \
     GO111MODULE=on
 
-# 安装必要的构建工具（包括 gcc、musl-dev 和 sqlite-dev 用于 CGO）
-RUN apk add --no-cache \
-    git \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     ca-certificates \
-    tzdata \
-    gcc \
-    musl-dev \
-    sqlite-dev
+    pkg-config \
+    libsqlite3-dev \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# 复制 Go 模块文件
 COPY go.mod go.sum ./
-
-# 下载依赖
 RUN go mod download
 
-# 复制后端源码
 COPY . .
-
-# 复制前端构建产物
 COPY --from=frontend-builder /app/web/dist ./web/dist
 
-# 构建后端可执行文件（启用 CGO 以支持 go-sqlite3）
-RUN CGO_ENABLED=1 go build -ldflags="-w -s" -o huobao-drama .
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /app/build/linux-amd64/huobao-drama-api ./main.go
 
-# ==================== 阶段3: 运行时镜像 ====================
-FROM alpine:latest
 
-# 安装运行时依赖
-RUN apk add --no-cache \
+FROM scratch AS backend-artifact
+COPY --from=backend-builder /app/build/linux-amd64/huobao-drama-api /huobao-drama-api
+
+
+FROM rockylinux:9 AS runtime
+
+RUN dnf install -y \
     ca-certificates \
     tzdata \
     ffmpeg \
     sqlite-libs \
-    wget \
-    && rm -rf /var/cache/apk/*
+    curl \
+    && dnf clean all
 
-# 设置时区
 ENV TZ=Asia/Shanghai
 
 WORKDIR /app
 
-# 从构建阶段复制可执行文件
-COPY --from=backend-builder /app/huobao-drama .
-
-# 复制前端构建产物
+COPY --from=backend-builder /app/build/linux-amd64/huobao-drama-api ./huobao-drama-api
 COPY --from=frontend-builder /app/web/dist ./web/dist
+COPY configs/config.example.yaml ./configs/config.example.yaml
+COPY migrations ./migrations
 
-# 复制配置文件模板并创建默认配置
-COPY configs/config.example.yaml ./configs/
-RUN cp ./configs/config.example.yaml ./configs/config.yaml
+RUN mkdir -p /app/data/storage && \
+    cp ./configs/config.example.yaml ./configs/config.yaml && \
+    chmod +x ./huobao-drama-api
 
-# 复制数据库迁移文件
-COPY migrations ./migrations/
-
-# 创建数据目录（root 用户运行，无需权限设置）
-RUN mkdir -p /app/data/storage
-
-# 暴露端口
 EXPOSE 5678
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:5678/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -fsS http://localhost:5678/health >/dev/null || exit 1
 
-# 启动应用
-CMD ["./huobao-drama"]
+CMD ["./huobao-drama-api"]
