@@ -17,11 +17,20 @@
 
 说明：
 
+- **所有开发工具统一安装在 `D:` 盘**，包括 Go、Node.js/nvm、FFmpeg 等，以及缓存和构建产物。
 - 前端统一使用 `nvm` 管理 Node 版本。
-- 当前推荐的 Go 路径：
-  [`D:\Program Files\Go1.23.1`](d:/Program%20Files/Go1.23.1)
-- 后续新增工具、缓存和构建产物，优先放在 `D:` 盘。
 - 当前后端已切换为纯 Go 的 SQLite 驱动（`glebarez/sqlite`），**本地运行不再依赖 `gcc/cgo`**。
+
+当前工具安装路径约定：
+
+| 工具 | 安装路径 |
+|---|---|
+| Go 1.23.1 | `D:\Program Files\Go1.23.1` |
+| nvm for Windows | `D:\Users\cao_l\AppData\Local\nvm` |
+| Node.js 23.7.0 | `D:\Users\cao_l\AppData\Local\nvm\v23.7.0` |
+| FFmpeg | 安装在 `D:` 盘并加入 PATH |
+| Go 构建缓存 | `D:\GitHub\huobao-drama\.gocache` |
+| npm 缓存 | `D:\GitHub\huobao-drama\.npm-cache` |
 
 ## 2. 安装 Node.js 并使用 nvm 管理
 
@@ -206,7 +215,15 @@ ai:
 
 **终端 1：启动 Go 后端**
 
-推荐方式：
+**方式一：直接运行 main.go（推荐）**
+
+确保已经按照步骤 2 配置好 Go 环境（包含 `GOPROXY`），在项目根目录直接执行：
+
+```powershell
+go run main.go
+```
+
+**方式二：使用启动脚本**
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-backend-dev.ps1
@@ -448,7 +465,21 @@ chmod +x ./scripts/docker-build-image.sh
 huobao-drama:latest
 ```
 
-### 15.3 直接运行容器
+**保存镜像到本机文件（离线导出）**
+
+构建完成后，若需将镜像脱机发给其他人或离线部署到服务器，可使用以下命令导出：
+
+```powershell
+# 将构建好的镜像保存为当前目录下的 huobao-drama.tar
+docker save -o huobao-drama.tar huobao-drama:latest
+```
+*(若需要在别的机器加载读取，可执行：`docker load -i huobao-drama.tar`)*
+
+### 15.3 直接运行容器（创建容器方法）
+
+可以使用项目中提供的脚本快速创建启动，也可以手动敲命令创建容器。
+
+**方法一：使用脚本创建并启动容器**
 
 Windows：
 
@@ -463,12 +494,28 @@ chmod +x ./scripts/docker-run-centos.sh
 ./scripts/docker-run-centos.sh
 ```
 
-默认行为：
+默认行为（脚本执行内容）：
 
-- 映射端口 `5678:5678`
-- 挂载数据目录到 `/app/data`
-- 挂载配置文件到 `/app/configs/config.yaml`
+- 映射该容器端口 `5678` 到主机 `5678`
+- 挂载本机的 `./data` 目录到容器 `/app/data`
+- 挂载本机的 `./configs/config.yaml` 配置文件到 `/app/configs/config.yaml`
 - 自动设置 `TZ=Asia/Shanghai`
+
+**方法二：纯手动命令创建容器**
+
+如果你不想使用脚本，也可以直接运行以下原生 Docker 命令（在项目根目录运行）来创建并在后台运行容器：
+
+```powershell
+docker run -d `
+  --name huobao-drama `
+  -p 5678:5678 `
+  -v ${PWD}/data:/app/data `
+  -v ${PWD}/configs/config.yaml:/app/configs/config.yaml `
+  -e TZ=Asia/Shanghai `
+  huobao-drama:latest
+```
+
+> **注意**：使用手动命令挂载前，请确保你已经通过 `Copy-Item .\configs\config.example.yaml .\configs\config.yaml` 创建了配置文件，否则 Docker 可能会把文件当成文件夹新建。
 
 ### 15.4 只在 CentOS 上运行二进制
 
