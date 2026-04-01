@@ -1,0 +1,10 @@
+./ai_config.go
+./asset.go
+./character_library.go
+./drama.go
+./frame_prompt.go
+./image_generation.go
+./task.go
+./timeline.go
+./video_generation.go
+./video_merge.go

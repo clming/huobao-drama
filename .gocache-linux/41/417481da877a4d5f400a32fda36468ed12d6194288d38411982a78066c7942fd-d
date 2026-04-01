@@ -1,0 +1,4 @@
+./gemini_image_client.go
+./image_client.go
+./openai_image_client.go
+./volcengine_image_client.go

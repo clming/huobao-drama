@@ -1,0 +1,5 @@
+./chatfire_client.go
+./minimax_client.go
+./openai_sora_client.go
+./video_client.go
+./volces_ark_client.go

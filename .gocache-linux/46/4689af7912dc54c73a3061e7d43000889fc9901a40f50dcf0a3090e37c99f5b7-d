@@ -1,0 +1,16 @@
+./ai_config.go
+./asset.go
+./character_batch.go
+./character_library.go
+./character_library_gen.go
+./drama.go
+./frame_prompt.go
+./frame_prompt_query.go
+./image_generation.go
+./scene.go
+./script_generation.go
+./storyboard.go
+./task.go
+./upload.go
+./video_generation.go
+./video_merge.go

@@ -1,0 +1,15 @@
+./ai_service.go
+./asset_service.go
+./character_library_service.go
+./drama_service.go
+./frame_prompt_service.go
+./image_generation_service.go
+./resource_transfer_service.go
+./script_generation_service.go
+./storyboard_composition_service.go
+./storyboard_service.go
+./storyboard_update_full.go
+./task_service.go
+./upload_service.go
+./video_generation_service.go
+./video_merge_service.go
